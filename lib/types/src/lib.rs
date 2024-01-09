@@ -21,6 +21,7 @@
     )
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![feature(error_in_core)]
 
 #[cfg(all(feature = "std", feature = "core"))]
 compile_error!(
@@ -39,16 +40,23 @@ pub mod lib {
     /// Custom `std` module.
     #[cfg(feature = "core")]
     pub mod std {
-        pub use alloc::{borrow, boxed, format, iter, rc, slice, string, vec};
-        pub use core::{any, cell, cmp, convert, fmt, hash, marker, mem, ops, ptr, sync, u32};
+        pub use alloc::{borrow, boxed, format, rc, slice, string, vec};
+        pub use core::{any, cell, cmp, convert, error, fmt, iter, hash, marker, mem, num, ops, ptr, str, sync, u32};
+
+        /// The `collections` module re-exports the collections used using
+        /// a combination of `alloc` and `hashbrown` collections.
+        pub mod collections {
+            pub use alloc::collections::BTreeMap;
+            pub use hashbrown::HashMap;
+        }
     }
 
     /// Custom `std` module.
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::{
-            any, borrow, boxed, cell, cmp, convert, fmt, format, hash, iter, marker, mem, ops, ptr,
-            rc, slice, string, sync, u32, vec,
+            any, borrow, boxed, cell, cmp, collections, convert, fmt, format, hash, iter, marker, mem, num, ops, ptr,
+            rc, slice, string, str, sync, u32, vec, error,
         };
     }
 }
@@ -153,7 +161,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod native {
     use super::Type;
     use crate::memory::{Memory32, Memory64, MemorySize};
-    use std::fmt;
+    use crate::lib::std::fmt;
 
     /// `NativeWasmType` represents a Wasm type that has a direct
     /// representation on the host (hence the “native” term).

@@ -11,8 +11,8 @@ use crate::{
     ModuleInfo, SignatureIndex, TableIndex,
 };
 use more_asserts::assert_lt;
-use std::convert::TryFrom;
-use std::mem::size_of;
+use crate::lib::std::convert::TryFrom;
+use crate::lib::std::mem::size_of;
 
 /// An index type for builtin functions.
 #[derive(Copy, Clone, Debug)]

@@ -4,7 +4,12 @@ use crate::{Features, MemoryIndex, MemoryStyle, ModuleInfo, TableIndex, TableSty
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+#[cfg(feature = "std")]
+use crate::lib::std::sync::Arc;
+
+#[cfg(feature = "core")]
+use alloc::sync::Arc;
 
 /// The required info for compiling a module.
 ///

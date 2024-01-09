@@ -3,12 +3,14 @@ use crate::{
     entity::{EntityRef, PrimaryMap},
     CompileModuleInfo, DeserializeError, FunctionIndex, LocalFunctionIndex, OwnedDataInitializer,
     SectionIndex, SerializeError, SignatureIndex,
+    lib::std::{format, boxed::Box, string::String, vec::Vec},
 };
 use rkyv::{
     archived_value, check_archived_value, de::deserializers::SharedDeserializeMap,
     ser::serializers::AllocSerializer, ser::Serializer as RkyvSerializer, Archive,
     Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
 };
+use crate::lib::std::string::ToString;
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 

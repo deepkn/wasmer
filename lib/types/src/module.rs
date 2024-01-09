@@ -5,6 +5,7 @@
 //! `wasmer::Module`.
 
 use crate::entity::{EntityRef, PrimaryMap};
+use crate::lib::std::{fmt, format, boxed::Box, string::String, vec::Vec};
 use crate::{
     CustomSectionIndex, DataIndex, ElemIndex, ExportIndex, ExportType, ExternType, FunctionIndex,
     FunctionType, GlobalIndex, GlobalInit, GlobalType, ImportIndex, ImportType, LocalFunctionIndex,
@@ -19,11 +20,11 @@ use rkyv::{
 };
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::collections::HashMap;
-use std::fmt;
-use std::iter::ExactSizeIterator;
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+use crate::lib::std::collections::BTreeMap;
+use crate::lib::std::collections::HashMap;
+use crate::lib::std::iter::ExactSizeIterator;
+use crate::lib::std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+use crate::lib::std::string::ToString;
 
 #[derive(Debug, Clone, RkyvSerialize, RkyvDeserialize, Archive)]
 #[archive_attr(derive(CheckBytes))]

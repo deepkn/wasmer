@@ -1,4 +1,5 @@
 use crate::SourceLoc;
+use crate::lib::std::string::String;
 
 /// Description of a frame in a backtrace.
 ///

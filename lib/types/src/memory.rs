@@ -3,9 +3,10 @@ use core::ops::SubAssign;
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use std::convert::{TryFrom, TryInto};
-use std::iter::Sum;
-use std::ops::{Add, AddAssign};
+use crate::lib::std::convert::{TryFrom, TryInto};
+use crate::lib::std::iter::Sum;
+use crate::lib::std::ops::{Add, AddAssign};
+use crate::lib::std::fmt;
 
 /// Implementation styles for WebAssembly linear memory.
 #[derive(
@@ -64,8 +65,8 @@ impl MemoryStyle {
 pub unsafe trait MemorySize: Copy {
     /// Type used to represent an offset into a memory. This is `u32` or `u64`.
     type Offset: Default
-        + std::fmt::Debug
-        + std::fmt::Display
+        + fmt::Debug
+        + fmt::Display
         + Eq
         + Ord
         + PartialEq<Self::Offset>

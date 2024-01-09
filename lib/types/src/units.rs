@@ -4,8 +4,12 @@ use crate::lib::std::ops::{Add, Sub};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
+use crate::lib::std::convert::TryInto;
+#[cfg(feature = "std")]
 use thiserror::Error;
+
+#[cfg(feature = "core")]
+use thiserror_core2::Error;
 
 /// WebAssembly page sizes are fixed to be 64KiB.
 /// Note: large page support may be added in an opt-in manner in the [future].

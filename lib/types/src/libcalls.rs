@@ -2,7 +2,7 @@ use enum_iterator::IntoEnumIterator;
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use crate::lib::std::fmt;
 
 /// The name of a runtime library routine.
 ///

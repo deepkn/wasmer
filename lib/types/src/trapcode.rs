@@ -8,7 +8,12 @@ use core::str::FromStr;
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
+use crate::lib::std::{error, boxed::Box};
+#[cfg(feature = "std")]
 use thiserror::Error;
+
+#[cfg(feature = "core")]
+use thiserror_core2::Error;
 
 /// A trap code describing the reason for a trap.
 ///
@@ -140,7 +145,7 @@ pub enum OnCalledAction {
     /// Will return the result of the invocation
     Finish,
     /// Traps with an error
-    Trap(Box<dyn std::error::Error + Send + Sync>),
+    Trap(Box<dyn error::Error + Send + Sync>),
 }
 
 #[cfg(test)]

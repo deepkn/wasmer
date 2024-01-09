@@ -10,8 +10,8 @@
 
 use crate::error::ParseCpuFeatureError;
 use enumset::{EnumSet, EnumSetType};
-use std::str::FromStr;
-use std::string::{String, ToString};
+use crate::lib::std::str::FromStr;
+use crate::lib::std::string::{String, ToString};
 pub use target_lexicon::{
     Aarch64Architecture, Architecture, BinaryFormat, CallingConvention, Endianness, Environment,
     OperatingSystem, PointerWidth, Triple, Vendor,

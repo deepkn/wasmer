@@ -5,6 +5,7 @@ use crate::lib::std::format;
 use crate::lib::std::string::{String, ToString};
 use crate::lib::std::vec::Vec;
 use crate::units::Pages;
+use crate::lib::std::boxed::Box;
 
 use bytecheck::CheckBytes;
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
