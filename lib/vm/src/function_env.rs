@@ -1,5 +1,6 @@
 use derivative::Derivative;
-use std::any::Any;
+use wasmer_types::lib::std::any::Any;
+use wasmer_types::lib::std::boxed::Box;
 
 /// Underlying FunctionEnvironment used by a `VMFunction`.
 #[derive(Derivative)]

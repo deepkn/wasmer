@@ -11,12 +11,18 @@ use crate::Trap;
 use crate::VMExternRef;
 use crate::VMFuncRef;
 use derivative::Derivative;
-use std::cell::UnsafeCell;
-use std::convert::TryFrom;
-use std::fmt;
-use std::ptr::NonNull;
+use wasmer_types::lib::std::cell::UnsafeCell;
+use wasmer_types::lib::std::convert::TryFrom;
+use wasmer_types::lib::std::fmt;
+use wasmer_types::lib::std::ptr::NonNull;
 use wasmer_types::TableStyle;
 use wasmer_types::{TableType, TrapCode, Type as ValType};
+use wasmer_types::lib::std::string::String;
+use wasmer_types::lib::std::boxed::Box;
+use wasmer_types::lib::std::vec::Vec;
+use wasmer_types::lib::std::vec;
+use wasmer_types::lib::std::format;
+
 
 /// A reference stored in a table. Can be either an externref or a funcref.
 #[derive(Debug, Clone)]

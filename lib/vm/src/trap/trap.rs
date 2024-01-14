@@ -1,7 +1,6 @@
 use backtrace::Backtrace;
-use std::error::Error;
-use std::fmt;
 use wasmer_types::TrapCode;
+use wasmer_types::lib::std::{boxed::Box, error::Error, fmt};
 
 /// Stores trace message with backtrace.
 #[derive(Debug)]
@@ -114,8 +113,8 @@ impl Trap {
     }
 }
 
-impl std::error::Error for Trap {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for Trap {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match &self {
             Trap::User(err) => Some(&**err),
             _ => None,

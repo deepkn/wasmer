@@ -8,8 +8,9 @@ use crate::table::VMTable;
 use crate::vmcontext::VMFunctionKind;
 use crate::{MaybeInstanceOwned, VMCallerCheckedAnyfunc};
 use derivative::Derivative;
-use std::any::Any;
+use wasmer_types::lib::std::any::Any;
 use wasmer_types::FunctionType;
+use wasmer_types::lib::std::boxed::Box;
 
 /// The value of an export passed from one instance to another.
 pub enum VMExtern {

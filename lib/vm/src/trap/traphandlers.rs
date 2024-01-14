@@ -12,17 +12,19 @@ use corosensei::stack::DefaultStack;
 use corosensei::trap::{CoroutineTrapHandler, TrapHandlerRegs};
 use corosensei::{CoroutineResult, ScopedCoroutine, Yielder};
 use scopeguard::defer;
-use std::any::Any;
-use std::cell::Cell;
-use std::error::Error;
-use std::io;
-use std::mem;
+use wasmer_types::lib::std::any::Any;
+use wasmer_types::lib::std::cell::Cell;
+use wasmer_types::lib::std::error::Error;
+use wasmer_types::lib::std::io;
+use wasmer_types::lib::std::mem;
+use wasmer_types::lib::std::vec;
 #[cfg(unix)]
-use std::mem::MaybeUninit;
-use std::ptr::{self, NonNull};
-use std::sync::atomic::{compiler_fence, AtomicPtr, AtomicUsize, Ordering};
-use std::sync::Once;
+use wasmer_types::lib::std::mem::MaybeUninit;
+use wasmer_types::lib::std::ptr::{self, NonNull};
+use wasmer_types::lib::std::sync::atomic::{compiler_fence, AtomicPtr, AtomicUsize, Ordering};
+use wasmer_types::lib::std::sync::Once;
 use wasmer_types::TrapCode;
+use wasmer_types::lib::std::boxed::Box;
 
 /// Configuration for the the runtime VM
 /// Currently only the stack size is configurable
@@ -885,7 +887,7 @@ impl UnwindReason {
                 pc,
                 signal_trap,
             } => Trap::wasm(pc, backtrace, signal_trap),
-            Self::Panic(panic) => std::panic::resume_unwind(panic),
+            Self::Panic(panic) => wasmer_types::lib::std::panic::resume_unwind(panic),
         }
     }
 }
@@ -1009,7 +1011,7 @@ pub fn lazy_per_thread_init() -> Result<(), Trap> {
 /// page.
 #[cfg(unix)]
 pub fn lazy_per_thread_init() -> Result<(), Trap> {
-    use std::ptr::null_mut;
+    use wasmer_types::lib::std::ptr::null_mut;
 
     thread_local! {
         /// Thread-local state is lazy-initialized on the first time it's used,

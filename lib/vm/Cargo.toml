@@ -14,17 +14,17 @@ version.workspace = true
 
 [dependencies]
 memoffset.workspace = true
-wasmer-types = { path = "../types", version = "=4.2.5" }
+wasmer-types = { path = "../types", version = "=4.2.5", default-features = false, optional = true }
 libc = { version = "^0.2", default-features = false }
 indexmap = { version = "1.6" }
-thiserror = "1.0"
+thiserror ={ version = "1.0", optional = true }
 more-asserts = "0.2"
 cfg-if = "1.0"
 backtrace = "0.3"
 serde = { version = "1.0", features = ["derive", "rc"], optional = true }
 enum-iterator = "0.7.0"
 scopeguard = "1.1.0"
-lazy_static = "1.4.0"
+lazy_static = { version = "1.4.0", optional = true }
 region = { version = "3.0" }
 corosensei = { version = "0.1.2" }
 derivative = { version = "^2" }
@@ -34,11 +34,26 @@ fnv = "1.0.3"
 tracing = { version = "0.1", optional = true }
 crossbeam-queue = "0.3.8"
 
+# These are for theseus port - so these would remain optional
+thiserror_core2 = { version = "2.0.0", default-features = false, optional = true }
+core2 = { version = "0.4.0", default-features = false, features = ["alloc", "nightly"], optional = true }
+hashbrown = { version = "0.11.2", features = ["ahash"], default-features = false, optional = true }
+
 [target.'cfg(target_vendor = "apple")'.dependencies]
 mach = "0.3.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["winbase", "memoryapi", "errhandlingapi"] }
+
+[target.'cfg(target_os = "theseus")'.dependencies]
+theseus_catch_unwind = { path = "../../../../kernel/catch_unwind", package = "catch_unwind" }
+thread_local_macro = { path = "../../../../kernel/thread_local_macro" }
+theseus_std = { path = "../../../../ports/theseus_std" }
+theseus_memory = { path = "../../../../kernel/memory", package = "memory" }
+theseus_task = { path = "../../../../kernel/task", package = "task" }
+theseus_signal_handler = { path = "../../../../kernel/signal_handler", package = "signal_handler" }
+theseus_mutex = { path = "../../../../kernel/sync_block", package = "sync_block", features = ["std-api"] }
+spin = { version = "0.9.0", git = "https://github.com/theseus-os/spin-rs" }
 
 [build-dependencies]
 cc = "1.0"
@@ -47,7 +62,9 @@ cc = "1.0"
 maintenance = { status = "actively-developed" }
 
 [features]
-default = []
+default = ["std"]
+std = ["lazy_static", "thiserror", "wasmer-types/std"]
+core = ["lazy_static/spin_no_std", "wasmer-types/core", "derivative/use_core", "thiserror_core2", "core2", "hashbrown"]
 enable-serde = ["serde", "indexmap/serde-1", "wasmer-types/enable-serde" ]
 
 [package.metadata.docs.rs]

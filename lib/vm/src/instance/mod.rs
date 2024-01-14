@@ -26,14 +26,17 @@ pub use allocator::InstanceAllocator;
 use memoffset::offset_of;
 use more_asserts::assert_lt;
 use std::alloc::Layout;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::fmt;
-use std::mem;
-use std::ptr::{self, NonNull};
-use std::slice;
-use std::sync::Arc;
+use wasmer_types::lib::std::cell::RefCell;
+use wasmer_types::lib::std::collections::HashMap;
+use wasmer_types::lib::std::convert::TryFrom;
+use wasmer_types::lib::std::fmt;
+use wasmer_types::lib::std::mem;
+use wasmer_types::lib::std::time;
+use wasmer_types::lib::std::ptr::{self, NonNull};
+use wasmer_types::lib::std::slice;
+use wasmer_types::lib::std::sync::Arc;
+use wasmer_types::lib::std::boxed::Box;
+use wasmer_types::lib::std::string::String;
 use wasmer_types::entity::{packed_option::ReservedValue, BoxedSlice, EntityRef, PrimaryMap};
 use wasmer_types::{
     DataIndex, DataInitializer, ElemIndex, ExportIndex, FunctionIndex, GlobalIndex, GlobalInit,
@@ -810,7 +813,7 @@ impl Instance {
         let timeout = if timeout < 0 {
             None
         } else {
-            Some(std::time::Duration::from_nanos(timeout as u64))
+            Some(time::Duration::from_nanos(timeout as u64))
         };
         let waiter = memory.do_wait(location, timeout);
         if waiter.is_err() {

@@ -41,13 +41,34 @@ pub mod lib {
     #[cfg(feature = "core")]
     pub mod std {
         pub use alloc::{borrow, boxed, format, rc, slice, string, vec};
-        pub use core::{any, cell, cmp, convert, error, fmt, iter, hash, marker, mem, num, ops, ptr, str, sync, u32};
+        pub use core::{any, cell, cmp, convert, ffi, fmt, iter, hash, marker, mem, num, ops, ptr, str, time, u32};
 
         /// The `collections` module re-exports the collections used using
         /// a combination of `alloc` and `hashbrown` collections.
         pub mod collections {
             pub use alloc::collections::BTreeMap;
-            pub use hashbrown::HashMap;
+            pub use hashbrown::{hash_map, HashMap};
+        }
+
+        /// The `collections` module re-exports the collections used using
+        /// a combination of `alloc` and `hashbrown` collections.
+        pub mod error {
+            pub use core2::error::Error;
+        }
+
+        /// The `sync` module re-exports the contents of core and alloc in
+        /// the same way as std::sync does.
+        pub mod sync {
+            pub use alloc::sync::*;
+            pub use core::sync::*;
+            pub use core::iter::Once;
+            #[cfg(target_os = "theseus")]
+            pub use sync_block::std_api::{Mutex, RwLock};
+        }
+
+        /// The `io` module re-exports core2::io for use in no_std environments.
+        pub mod io {
+            pub use core2::io::*;
         }
     }
 
@@ -55,8 +76,8 @@ pub mod lib {
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::{
-            any, borrow, boxed, cell, cmp, collections, convert, fmt, format, hash, iter, marker, mem, num, ops, ptr,
-            rc, slice, string, str, sync, u32, vec, error,
+            any, borrow, boxed, cell, cmp, collections, convert, ffi, fmt, format, hash, iter, marker, mem, num, ops, ptr,
+            rc, slice, string, str, sync, u32, vec, error, time,
         };
     }
 }

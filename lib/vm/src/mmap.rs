@@ -6,8 +6,10 @@
 
 use more_asserts::assert_le;
 use more_asserts::assert_lt;
-use std::io;
-use std::ptr;
+use wasmer_types::lib::std::io;
+use wasmer_types::lib::std::ptr;
+use wasmer_types::lib::std::vec::Vec;
+use wasmer_types::lib::std::string::String;
 use std::slice;
 
 /// Round `size` up to the nearest multiple of `page_size`.

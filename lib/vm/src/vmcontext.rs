@@ -12,10 +12,10 @@ use crate::trap::{Trap, TrapCode};
 use crate::VMFunctionBody;
 use crate::VMTable;
 use crate::{VMBuiltinFunctionIndex, VMFunction};
-use std::convert::TryFrom;
-use std::ptr::{self, NonNull};
-use std::sync::atomic::{AtomicPtr, Ordering};
-use std::u32;
+use wasmer_types::lib::std::convert::TryFrom;
+use wasmer_types::lib::std::ptr::{self, NonNull};
+use wasmer_types::lib::std::sync::atomic::{AtomicPtr, Ordering};
+use wasmer_types::lib::std::u32;
 use wasmer_types::RawValue;
 
 /// Union representing the first parameter passed when calling a function.
@@ -28,7 +28,7 @@ pub union VMFunctionContext {
     /// Wasm functions take a pointer to [`VMContext`].
     pub vmctx: *mut VMContext,
     /// Host functions can have custom environments.
-    pub host_env: *mut std::ffi::c_void,
+    pub host_env: *mut wasmer_types::lib::std::ffi::c_void,
 }
 
 impl VMFunctionContext {
@@ -38,22 +38,22 @@ impl VMFunctionContext {
     }
 }
 
-impl std::fmt::Debug for VMFunctionContext {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl wasmer_types::lib::std::fmt::Debug for VMFunctionContext {
+    fn fmt(&self, f: &mut wasmer_types::lib::std::fmt::Formatter) -> wasmer_types::lib::std::fmt::Result {
         f.debug_struct("VMFunctionContext")
             .field("vmctx_or_hostenv", unsafe { &self.host_env })
             .finish()
     }
 }
 
-impl std::cmp::PartialEq for VMFunctionContext {
+impl wasmer_types::lib::std::cmp::PartialEq for VMFunctionContext {
     fn eq(&self, rhs: &Self) -> bool {
         unsafe { self.host_env as usize == rhs.host_env as usize }
     }
 }
 
-impl std::hash::Hash for VMFunctionContext {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl wasmer_types::lib::std::hash::Hash for VMFunctionContext {
+    fn hash<H: wasmer_types::lib::std::hash::Hasher>(&self, state: &mut H) {
         unsafe {
             self.vmctx.hash(state);
         }
@@ -78,7 +78,7 @@ pub struct VMFunctionImport {
 mod test_vmfunction_import {
     use super::VMFunctionImport;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
     use wasmer_types::VMOffsets;
 
@@ -142,7 +142,7 @@ mod test_vmdynamicfunction_import_context {
     use super::VMDynamicFunctionContext;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -201,7 +201,7 @@ mod test_vmtable_import {
     use super::VMTableImport;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -236,7 +236,7 @@ mod test_vmmemory_import {
     use super::VMMemoryImport;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -287,7 +287,7 @@ mod test_vmglobal_import {
     use super::VMGlobalImport;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -457,7 +457,7 @@ mod test_vmtable_definition {
     use super::VMTableDefinition;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -495,7 +495,7 @@ mod test_vmglobal_definition {
     use super::VMGlobalDefinition;
     use crate::{VMFuncRef, VMOffsets};
     use more_asserts::assert_ge;
-    use std::mem::{align_of, size_of};
+    use wasmer_types::lib::std::mem::{align_of, size_of};
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -544,7 +544,7 @@ pub struct VMSharedSignatureIndex(u32);
 #[cfg(test)]
 mod test_vmshared_signature_index {
     use super::VMSharedSignatureIndex;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::{ModuleInfo, TargetSharedSignatureIndex, VMOffsets};
 
     #[test]
@@ -602,7 +602,7 @@ mod test_vmcaller_checked_anyfunc {
     use super::VMCallerCheckedAnyfunc;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]
@@ -784,7 +784,7 @@ mod test_vmmemory_definition {
     use super::VMMemoryDefinition;
     use crate::VMOffsets;
     use memoffset::offset_of;
-    use std::mem::size_of;
+    use wasmer_types::lib::std::mem::size_of;
     use wasmer_types::ModuleInfo;
 
     #[test]

@@ -1,6 +1,7 @@
 use derivative::Derivative;
-use std::any::Any;
+use wasmer_types::lib::std::any::Any;
 use wasmer_types::RawValue;
+use wasmer_types::lib::std::boxed::Box;
 
 use crate::store::InternalStoreHandle;
 

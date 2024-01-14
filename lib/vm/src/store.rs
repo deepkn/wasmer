@@ -2,7 +2,10 @@ use crate::{
     VMExternObj, VMFunction, VMFunctionEnvironment, VMGlobal, VMInstance, VMMemory, VMTable,
 };
 use core::slice::Iter;
-use std::{cell::UnsafeCell, fmt, marker::PhantomData, num::NonZeroUsize, ptr::NonNull};
+use wasmer_types::lib::std::{
+    boxed::Box, cell::UnsafeCell, fmt, hash, marker::PhantomData, num::NonZeroUsize,
+    ptr::NonNull, vec::Vec,
+};
 use wasmer_types::StoreId;
 
 /// Trait to represent an object managed by a context. This is implemented on
@@ -119,8 +122,8 @@ impl<T> Clone for StoreHandle<T> {
     }
 }
 
-impl<T> std::hash::Hash for StoreHandle<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl<T> hash::Hash for StoreHandle<T> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
         self.internal.idx.hash(state);
     }
@@ -275,9 +278,9 @@ impl<T> MaybeInstanceOwned<T> {
     }
 }
 
-impl<T> std::fmt::Debug for MaybeInstanceOwned<T>
+impl<T> fmt::Debug for MaybeInstanceOwned<T>
 where
-    T: std::fmt::Debug,
+    T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

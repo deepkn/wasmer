@@ -10,12 +10,15 @@ pub use crate::threadconditions::{NotifyLocation, WaiterError};
 use crate::trap::Trap;
 use crate::{mmap::Mmap, store::MaybeInstanceOwned, vmcontext::VMMemoryDefinition};
 use more_asserts::assert_ge;
-use std::cell::UnsafeCell;
-use std::convert::TryInto;
-use std::ptr::NonNull;
+use wasmer_types::lib::std::cell::UnsafeCell;
+use wasmer_types::lib::std::convert::TryInto;
+use wasmer_types::lib::std::ptr::NonNull;
+use wasmer_types::lib::std::fmt;
+use wasmer_types::lib::std::format;
 use std::slice;
-use std::sync::{Arc, RwLock};
-use std::time::Duration;
+use wasmer_types::lib::std::sync::{Arc, RwLock};
+use wasmer_types::lib::std::boxed::Box;
+use wasmer_types::lib::std::time::Duration;
 use wasmer_types::{Bytes, MemoryError, MemoryStyle, MemoryType, Pages, WASM_PAGE_SIZE};
 
 // The memory mapped area
@@ -673,7 +676,7 @@ pub unsafe fn initialize_memory_with_data(
 /// Represents memory that is used by the WebAsssembly module
 pub trait LinearMemory
 where
-    Self: std::fmt::Debug + Send,
+    Self: fmt::Debug + Send,
 {
     /// Returns the type for this memory.
     fn ty(&self) -> MemoryType;

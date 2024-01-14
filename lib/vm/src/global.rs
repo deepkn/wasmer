@@ -1,6 +1,6 @@
 use crate::{store::MaybeInstanceOwned, vmcontext::VMGlobalDefinition};
 use derivative::Derivative;
-use std::{cell::UnsafeCell, ptr::NonNull};
+use wasmer_types::lib::std::{boxed::Box, cell::UnsafeCell, ptr::NonNull};
 use wasmer_types::GlobalType;
 
 /// A Global instance

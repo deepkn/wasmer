@@ -2,9 +2,10 @@ use super::{Instance, VMInstance};
 use crate::vmcontext::VMTableDefinition;
 use crate::VMMemoryDefinition;
 use std::alloc::{self, Layout};
-use std::convert::TryFrom;
-use std::mem;
-use std::ptr::{self, NonNull};
+use wasmer_types::lib::std::convert::TryFrom;
+use wasmer_types::lib::std::mem;
+use wasmer_types::lib::std::vec::Vec;
+use wasmer_types::lib::std::ptr::{self, NonNull};
 use wasmer_types::entity::EntityRef;
 use wasmer_types::VMOffsets;
 use wasmer_types::{LocalMemoryIndex, LocalTableIndex, ModuleInfo};
@@ -171,7 +172,7 @@ impl InstanceAllocator {
 
         // We need to do some pointer arithmetic now. The unit is `u8`.
         let ptr = self.instance_ptr.cast::<u8>().as_ptr();
-        let base_ptr = ptr.add(std::mem::size_of::<Instance>());
+        let base_ptr = ptr.add(mem::size_of::<Instance>());
 
         for i in 0..num_tables {
             let table_offset = self

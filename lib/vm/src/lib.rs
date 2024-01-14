@@ -3,6 +3,7 @@
 #![deny(missing_docs, trivial_numeric_casts, unused_extern_crates)]
 #![deny(trivial_numeric_casts, unused_extern_crates)]
 #![warn(unused_import_braces)]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(clippy::new_without_default, clippy::vtable_address_comparisons)
@@ -20,6 +21,15 @@
     )
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![feature(error_in_core)]
+
+#[cfg(all(feature = "std", feature = "core"))]
+compile_error!(
+    "The `std` and `core` features are both enabled, which is an error. Please enable only once."
+);
+
+#[cfg(all(not(feature = "std"), not(feature = "core")))]
+compile_error!("Both the `std` and `core` features are disabled. Please enable one of them.");
 
 mod export;
 mod extern_ref;
@@ -39,7 +49,7 @@ mod vmcontext;
 
 pub mod libcalls;
 
-use std::ptr::NonNull;
+use wasmer_types::lib::std::ptr::NonNull;
 
 pub use crate::export::*;
 pub use crate::extern_ref::{VMExternObj, VMExternRef};
@@ -80,7 +90,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[repr(transparent)]
 pub struct SectionBodyPtr(pub *const u8);
 
-impl std::ops::Deref for SectionBodyPtr {
+impl wasmer_types::lib::std::ops::Deref for SectionBodyPtr {
     type Target = *const u8;
 
     fn deref(&self) -> &Self::Target {
@@ -111,7 +121,7 @@ mod test_vmfunction_body {
 #[repr(transparent)]
 pub struct FunctionBodyPtr(pub *const VMFunctionBody);
 
-impl std::ops::Deref for FunctionBodyPtr {
+impl wasmer_types::lib::std::ops::Deref for FunctionBodyPtr {
     type Target = *const VMFunctionBody;
 
     fn deref(&self) -> &Self::Target {

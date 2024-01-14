@@ -1,9 +1,16 @@
 use dashmap::DashMap;
 use fnv::FnvBuildHasher;
-use std::sync::Arc;
-use std::thread::{current, park, park_timeout, Thread};
-use std::time::Duration;
+use wasmer_types::lib::std::sync::Arc;
+use wasmer_types::lib::std::thread::{current, park, park_timeout, Thread};
+use wasmer_types::lib::std::time::Duration;
+use wasmer_types::lib::std::vec::Vec;
+use wasmer_types::lib::std::fmt::{Display, Formatter, Result};
+
+#[cfg(feature = "std")]
 use thiserror::Error;
+
+#[cfg(not(feature = "std"))]
+use thiserror_core2::Error;
 
 /// Error that can occur during wait/notify calls.
 #[derive(Debug, Error)]
@@ -16,8 +23,8 @@ pub enum WaiterError {
     TooManyWaiters,
 }
 
-impl std::fmt::Display for WaiterError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for WaiterError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "WaiterError")
     }
 }

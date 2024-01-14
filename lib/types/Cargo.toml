@@ -21,19 +21,22 @@ core2 = { version = "0.4.0", default-features = false, features = ["alloc", "nig
 hashbrown = { version = "0.11.2", features = ["ahash"], default-features = false }
 more-asserts = "0.2"
 indexmap = { version = "1.6" }
-rkyv = { version = "0.7.40", features = ["indexmap", "validation", "strict"] }
+rkyv = { version = "0.7.43", default-features = false, features = ["alloc", "indexmap", "validation", "size_32", "strict"]}
 enum-iterator = "0.7.0"
 target-lexicon = { version = "0.12.2", default-features = false }
 enumset.workspace = true
-bytecheck = "0.6.8"
+bytecheck = { version = "0.6.8", default-features = false }
+
+[target.'cfg(target_os = "theseus")'.dependencies]
+theseus_mutex = { path = "../../../../kernel/sync_block", package = "sync_block", features = ["std-api"] }
 
 [dev-dependencies]
 memoffset.workspace = true
 
 [features]
 default = ["std"]
-std = ["dep:thiserror"]
-core = ["dep:thiserror_core2", "dep:core2"]
+std = ["thiserror", "rkyv/std", "bytecheck/std"]
+core = ["thiserror_core2", "core2"]
 enable-serde = ["serde", "serde/std", "serde_bytes", "indexmap/serde-1"]
 
 [package.metadata.docs.rs]

@@ -6,9 +6,9 @@
 
 use crate::vmcontext::VMSharedSignatureIndex;
 use more_asserts::{assert_lt, debug_assert_lt};
-use std::collections::{hash_map, HashMap};
-use std::convert::TryFrom;
-use std::sync::RwLock;
+use wasmer_types::lib::std::collections::{hash_map, HashMap};
+use wasmer_types::lib::std::convert::TryFrom;
+use wasmer_types::lib::std::sync::RwLock;
 use wasmer_types::FunctionType;
 
 /// WebAssembly requires that the caller and callee signatures in an indirect
@@ -49,7 +49,7 @@ impl SignatureRegistry {
                 // is reserved for VMSharedSignatureIndex::default().
                 debug_assert_lt!(
                     len,
-                    std::u32::MAX as usize,
+                    wasmer_types::lib::std::u32::MAX as usize,
                     "Invariant check: signature_hash.len() < std::u32::MAX"
                 );
                 let sig_id = VMSharedSignatureIndex::new(u32::try_from(len).unwrap());

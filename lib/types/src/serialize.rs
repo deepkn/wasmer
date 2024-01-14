@@ -1,5 +1,5 @@
 use crate::entity::PrimaryMap;
-use crate::lib::std::{error, format, mem, vec::Vec, boxed::Box};
+use crate::lib::std::{format, mem, vec::Vec, boxed::Box};
 use crate::{
     compilation::target::CpuFeature, CompileModuleInfo, CompiledFunctionFrameInfo, CustomSection,
     DeserializeError, Dwarf, Features, FunctionBody, FunctionIndex, LocalFunctionIndex,
@@ -15,6 +15,7 @@ use rkyv::{
 };
 use crate::lib::std::convert::TryInto;
 use crate::lib::std::string::ToString;
+
 
 /// The compilation related data for a serialized modules
 #[derive(Archive, Default, RkyvDeserialize, RkyvSerialize)]
@@ -66,7 +67,8 @@ pub struct SerializableModule {
     pub cpu_features: u64,
 }
 
-fn to_serialize_error(err: impl error::Error) -> SerializeError {
+
+fn to_serialize_error(err: impl crate::lib::std::fmt::Display) -> SerializeError {
     SerializeError::Generic(format!("{}", err))
 }
 
