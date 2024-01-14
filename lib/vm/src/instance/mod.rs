@@ -25,7 +25,7 @@ use crate::{VMConfig, VMFuncRef, VMFunction, VMGlobal, VMMemory, VMTable};
 pub use allocator::InstanceAllocator;
 use memoffset::offset_of;
 use more_asserts::assert_lt;
-use std::alloc::Layout;
+use wasmer_types::lib::std::alloc::{self, Layout};
 use wasmer_types::lib::std::cell::RefCell;
 use wasmer_types::lib::std::collections::HashMap;
 use wasmer_types::lib::std::convert::TryFrom;
@@ -987,7 +987,7 @@ impl Drop for VMInstance {
             // Need to drop all the actual Instance members
             instance_ptr.drop_in_place();
             // And then free the memory allocated for the Instance itself
-            std::alloc::dealloc(instance_ptr as *mut u8, self.instance_layout);
+            alloc::dealloc(instance_ptr as *mut u8, self.instance_layout);
         }
     }
 }

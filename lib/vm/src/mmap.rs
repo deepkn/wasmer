@@ -10,7 +10,7 @@ use wasmer_types::lib::std::io;
 use wasmer_types::lib::std::ptr;
 use wasmer_types::lib::std::vec::Vec;
 use wasmer_types::lib::std::string::String;
-use std::slice;
+use wasmer_types::lib::std::slice;
 
 /// Round `size` up to the nearest multiple of `page_size`.
 fn round_up_to_page_size(size: usize, page_size: usize) -> usize {

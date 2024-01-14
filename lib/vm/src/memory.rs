@@ -15,7 +15,7 @@ use wasmer_types::lib::std::convert::TryInto;
 use wasmer_types::lib::std::ptr::NonNull;
 use wasmer_types::lib::std::fmt;
 use wasmer_types::lib::std::format;
-use std::slice;
+use wasmer_types::lib::std::slice;
 use wasmer_types::lib::std::sync::{Arc, RwLock};
 use wasmer_types::lib::std::boxed::Box;
 use wasmer_types::lib::std::time::Duration;

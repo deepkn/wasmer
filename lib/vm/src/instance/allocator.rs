@@ -1,7 +1,7 @@
 use super::{Instance, VMInstance};
 use crate::vmcontext::VMTableDefinition;
 use crate::VMMemoryDefinition;
-use std::alloc::{self, Layout};
+use wasmer_types::lib::std::alloc::{self, Layout};
 use wasmer_types::lib::std::convert::TryFrom;
 use wasmer_types::lib::std::mem;
 use wasmer_types::lib::std::vec::Vec;
@@ -53,7 +53,7 @@ impl Drop for InstanceAllocator {
             let instance_ptr = self.instance_ptr.as_ptr();
 
             unsafe {
-                std::alloc::dealloc(instance_ptr as *mut u8, self.instance_layout);
+                alloc::dealloc(instance_ptr as *mut u8, self.instance_layout);
             }
         }
     }

@@ -40,8 +40,8 @@ pub mod lib {
     /// Custom `std` module.
     #[cfg(feature = "core")]
     pub mod std {
-        pub use alloc::{borrow, boxed, format, rc, slice, string, vec};
-        pub use core::{any, cell, cmp, convert, ffi, fmt, iter, hash, marker, mem, num, ops, ptr, str, time, u32};
+        pub use ::alloc::{borrow, boxed, format, rc, slice, string, vec};
+        pub use core::{any, cell, cmp, convert, ffi, fmt, iter, hash, marker, mem, num, ops, panic, ptr, str, time, u32};
 
         /// The `collections` module re-exports the collections used using
         /// a combination of `alloc` and `hashbrown` collections.
@@ -70,13 +70,18 @@ pub mod lib {
         pub mod io {
             pub use core2::io::*;
         }
+
+        /// Re-exports alloc::alloc for use as std::alloc
+        pub mod alloc {
+            pub use ::alloc::alloc::*;
+        }
     }
 
     /// Custom `std` module.
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::{
-            any, borrow, boxed, cell, cmp, collections, convert, ffi, fmt, format, hash, iter, marker, mem, num, ops, ptr,
+            any, borrow, boxed, cell, cmp, collections, convert, ffi, fmt, format, hash, iter, marker, mem, num, ops, panic, ptr,
             rc, slice, string, str, sync, u32, vec, error, time,
         };
     }

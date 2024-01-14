@@ -26,6 +26,9 @@ use wasmer_types::lib::std::sync::Once;
 use wasmer_types::TrapCode;
 use wasmer_types::lib::std::boxed::Box;
 
+#[cfg(target_os = "theseus")]
+use thread_local_macro::thread_local;
+
 /// Configuration for the the runtime VM
 /// Currently only the stack size is configurable
 pub struct VMConfig {
