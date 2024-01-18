@@ -42,6 +42,7 @@ pub mod lib {
     pub mod std {
         pub use ::alloc::{borrow, boxed, format, rc, slice, string, vec};
         pub use core::{any, cell, cmp, convert, ffi, fmt, iter, hash, marker, mem, num, ops, panic, ptr, str, time, u32};
+        pub use core_detect::*;
 
         /// The `collections` module re-exports the collections used using
         /// a combination of `alloc` and `hashbrown` collections.
@@ -63,7 +64,7 @@ pub mod lib {
             pub use core::sync::*;
             pub use core::iter::Once;
             #[cfg(target_os = "theseus")]
-            pub use sync_block::std_api::{Mutex, RwLock};
+            pub use theseus_mutex::std_api::{Mutex, RwLock};
         }
 
         /// The `io` module re-exports core2::io for use in no_std environments.

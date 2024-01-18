@@ -57,46 +57,46 @@ impl CpuFeature {
     pub fn for_host() -> EnumSet<Self> {
         let mut features = EnumSet::new();
 
-        if std::is_x86_feature_detected!("sse2") {
+        if crate::lib::std::is_x86_feature_detected!("sse2") {
             features.insert(Self::SSE2);
         }
-        if std::is_x86_feature_detected!("sse3") {
+        if crate::lib::std::is_x86_feature_detected!("sse3") {
             features.insert(Self::SSE3);
         }
-        if std::is_x86_feature_detected!("ssse3") {
+        if crate::lib::std::is_x86_feature_detected!("ssse3") {
             features.insert(Self::SSSE3);
         }
-        if std::is_x86_feature_detected!("sse4.1") {
+        if crate::lib::std::is_x86_feature_detected!("sse4.1") {
             features.insert(Self::SSE41);
         }
-        if std::is_x86_feature_detected!("sse4.2") {
+        if crate::lib::std::is_x86_feature_detected!("sse4.2") {
             features.insert(Self::SSE42);
         }
-        if std::is_x86_feature_detected!("popcnt") {
+        if crate::lib::std::is_x86_feature_detected!("popcnt") {
             features.insert(Self::POPCNT);
         }
-        if std::is_x86_feature_detected!("avx") {
+        if crate::lib::std::is_x86_feature_detected!("avx") {
             features.insert(Self::AVX);
         }
-        if std::is_x86_feature_detected!("bmi1") {
+        if crate::lib::std::is_x86_feature_detected!("bmi1") {
             features.insert(Self::BMI1);
         }
-        if std::is_x86_feature_detected!("bmi2") {
+        if crate::lib::std::is_x86_feature_detected!("bmi2") {
             features.insert(Self::BMI2);
         }
-        if std::is_x86_feature_detected!("avx2") {
+        if crate::lib::std::is_x86_feature_detected!("avx2") {
             features.insert(Self::AVX2);
         }
-        if std::is_x86_feature_detected!("avx512dq") {
+        if crate::lib::std::is_x86_feature_detected!("avx512dq") {
             features.insert(Self::AVX512DQ);
         }
-        if std::is_x86_feature_detected!("avx512vl") {
+        if crate::lib::std::is_x86_feature_detected!("avx512vl") {
             features.insert(Self::AVX512VL);
         }
-        if std::is_x86_feature_detected!("avx512f") {
+        if crate::lib::std::is_x86_feature_detected!("avx512f") {
             features.insert(Self::AVX512F);
         }
-        if std::is_x86_feature_detected!("lzcnt") {
+        if crate::lib::std::is_x86_feature_detected!("lzcnt") {
             features.insert(Self::LZCNT);
         }
         features

@@ -12,7 +12,6 @@ use crate::{
     LocalGlobalIndex, LocalMemoryIndex, LocalTableIndex, MemoryIndex, MemoryType, SignatureIndex,
     TableIndex, TableInitializer, TableType,
 };
-use indexmap::IndexMap;
 use rkyv::{
     de::SharedDeserializeRegistry, ser::ScratchSpace, ser::Serializer,
     ser::SharedSerializeRegistry, Archive, Archived, CheckBytes, Deserialize as RkyvDeserialize,
@@ -25,6 +24,11 @@ use crate::lib::std::collections::HashMap;
 use crate::lib::std::iter::ExactSizeIterator;
 use crate::lib::std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 use crate::lib::std::string::ToString;
+
+#[cfg(feature = "std")]
+type IndexMap<K, V> = indexmap::IndexMap<K, V>;
+#[cfg(not(feature = "std"))]
+type IndexMap<K, V> = indexmap::IndexMap<K, V, crate::lib::std::collections::hash_map::DefaultHashBuilder>;
 
 #[derive(Debug, Clone, RkyvSerialize, RkyvDeserialize, Archive)]
 #[archive_attr(derive(CheckBytes))]
