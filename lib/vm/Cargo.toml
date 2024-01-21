@@ -26,11 +26,14 @@ scopeguard = { version = "1.1.0", default-features = false }
 lazy_static = { version = "1.4.0", optional = true }
 corosensei = { version = "0.1.2", default-features = false }
 derivative = { version = "^2", default-features = false }
-dashmap = { version = "5.4", default-features = false }
-fnv = {version = "1.0.3", default-features = false }
+dashmap = { version = "5.5.3", default-features = false, optional = true }
+fnv = { version = "1.0.3", default-features = false }
+backtrace = { version = "0.3.61", default-features = false }
+region = { version = "3.0.0" }
 # - Optional shared dependencies.
 tracing = { version = "0.1", default-features = false, optional = true }
 crossbeam-queue = { version = "0.3.8", default-features = false }
+leapfrog = { version = "0.3.0", git = "https://github.com/deepkn/leapfrog", optional = true }
 
 # These are for theseus port - so these would remain optional
 thiserror_core2 = { version = "2.0.0", default-features = false, optional = true }
@@ -43,13 +46,7 @@ mach = "0.3.2"
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["winbase", "memoryapi", "errhandlingapi"] }
 
-[target.'cfg(not(target_os = "theseus"))'.dependencies]
-backtrace = { path = "../../../../ports/backtrace" }
-region = { path = "../../../../ports/region" }
-
 [target.'cfg(target_os = "theseus")'.dependencies]
-backtrace = { path = "../../../../ports/backtrace", default-features = false }
-region = { path = "../../../../ports/region", default-features = false }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 theseus_catch_unwind = { path = "../../../../kernel/catch_unwind", package = "catch_unwind" }
 thread_local_macro = { path = "../../../../kernel/thread_local_macro" }
@@ -68,8 +65,8 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std"]
-std = ["lazy_static", "thiserror", "wasmer-types/std", "scopeguard/use_std", "crossbeam-queue/std", "serde/std", "indexmap/std", "fnv/std", "tracing/std"]
-core = ["wasmer-types/core", "derivative/use_core", "thiserror_core2", "core2", "hashbrown"]
+std = ["lazy_static", "thiserror", "wasmer-types/std", "scopeguard/use_std", "crossbeam-queue/std", "serde/std", "indexmap/std", "fnv/std", "tracing/std", "dashmap", "backtrace/std"]
+core = ["wasmer-types/core", "derivative/use_core", "thiserror_core2", "core2", "hashbrown", "leapfrog", "crossbeam-queue/alloc"]
 enable-serde = ["serde", "indexmap/serde-1", "wasmer-types/enable-serde" ]
 
 [package.metadata.docs.rs]

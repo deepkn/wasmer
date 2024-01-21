@@ -15,7 +15,6 @@ use scopeguard::defer;
 use wasmer_types::lib::std::any::Any;
 use wasmer_types::lib::std::cell::Cell;
 use wasmer_types::lib::std::error::Error;
-use wasmer_types::lib::std::io;
 use wasmer_types::lib::std::mem;
 use wasmer_types::lib::std::vec;
 #[cfg(unix)]
@@ -28,6 +27,8 @@ use wasmer_types::lib::std::boxed::Box;
 
 #[cfg(target_os = "theseus")]
 use thread_local_macro::thread_local;
+#[cfg(target_os = "theseus")]
+use theseus_task::{KillReason, PanicInfoOwned};
 
 /// Configuration for the the runtime VM
 /// Currently only the stack size is configurable
@@ -90,6 +91,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "windows")] {
         /// Function which may handle custom signals while processing traps.
         pub type TrapHandlerFn<'a> = dyn Fn(winapi::um::winnt::PEXCEPTION_POINTERS) -> bool + Send + Sync + 'a;
+    } else if #[cfg(target_os = "theseus")] {
+        use theseus_signal_handler::SignalContext;
+        pub type TrapHandlerFn<'a> = dyn Fn(&SignalContext) -> bool + Send + Sync + 'a;
     }
 }
 
@@ -583,6 +587,84 @@ cfg_if::cfg_if! {
                 }
             };
         }
+    } else if #[cfg(target_os = "theseus")] {
+        use theseus_signal_handler::{register_signal_handler, Signal};
+
+        /// This isn't really unsafe in Theseus, but the rest of wasmer expects it to be,
+        /// so we keep it an unsafe fn to match other platforms.
+        pub unsafe fn platform_init() {
+            platform_init_internal();
+        }
+
+        fn platform_init_internal() {
+            // Register the `trap_handler` function as a Theseus signal handler by default.
+            register_signal_handler(Signal::InvalidAddress, Box::new(trap_handler))
+                .expect("platform_init(): failed to register Signal::InvalidAddress handler");
+            register_signal_handler(Signal::IllegalInstruction, Box::new(trap_handler))
+                .expect("platform_init(): failed to register Signal::IllegalInstruction handler");
+            register_signal_handler(Signal::BusError, Box::new(trap_handler))
+                .expect("platform_init(): failed to register Signal::BusError handler");
+            register_signal_handler(Signal::ArithmeticError, Box::new(trap_handler))
+                .expect("platform_init(): failed to register Signal::ArithmeticError handler");
+        }
+
+        /// The default signal handler for wasmer on Theseus.
+        /// 
+        /// Note: much of this was borrowed from `traphandlers/unix.rs`
+        unsafe fn trap_handler(signal_context: &SignalContext) -> Result<(), ()> {
+            let (pc, sp) = get_pc_sp(signal_context);
+            let maybe_fault_address = match signal_context.signal {
+                InvalidAddress => pc,
+                _ => None,
+            };
+            let trap_code = match signal_context.signal {
+                IllegalInstruction => process_illegal_op(pc),
+                _ => None,
+            };
+
+            // This is basically the same as the unix version above, only with a
+            // few parameters tweaked here and there.
+            let handled = TrapHandlerContext::handle_trap(
+                pc,
+                sp,
+                maybe_fault_address,
+                trap_code,
+                |regs| update_context(signal_context, regs),
+                |handler| handler(signal_context),
+            );
+
+            if handled {
+                // indicates we handled this trap, and the task can continue executing.
+                Ok(())
+            } else {
+                // we didn't handle this trap, so we'll allow the Theseus system 
+                // to continue on to its default action of likely killing the task.
+                Err(())
+            }
+        }
+
+        unsafe fn get_pc_sp(signal_context: &SignalContext) -> (usize, usize) {
+            let (pc, sp);
+            pc = signal_context.instruction_pointer.value() as *const u8;
+            sp = signal_context.stack_pointer.value() as *const u8;
+            (pc, sp)
+        }
+
+        unsafe fn update_context(signal_context: &mut SignalContext, regs: TrapHandlerRegs) {
+            cfg_if::cfg_if! {
+                if #[cfg(target_arch = "x86_64")] {
+                    let TrapHandlerRegs { rip, rsp, rbp, rdi, rsi } = regs;
+                    signal_context.instruction_pointer = rip;
+                    signal_context.stack_pointer = rsp;
+                } else if #[cfg(target_arch = "x86")] {
+                    let TrapHandlerRegs { eip, esp, ebp, ecx, edx } = regs;
+                    signal_context.instruction_pointer = eip;
+                    signale_context.stack_pointer = esp;
+                } else {
+                    compile_error!("Unsupported platform");
+                }
+            }
+        }   
     }
 }
 
@@ -890,7 +972,14 @@ impl UnwindReason {
                 pc,
                 signal_trap,
             } => Trap::wasm(pc, backtrace, signal_trap),
-            Self::Panic(panic) => wasmer_types::lib::std::panic::resume_unwind(panic),
+            Self::Panic(panic) => {
+                #[cfg(feature = "std")]
+                std::panic::resume_unwind(panic);
+                #[cfg(target_os = "theseus")]
+                theseus_catch_unwind::resume_unwind(
+                   KillReason::Panic(PanicInfoOwned::from_payload(panic))
+                );
+            }
         }
     }
 }
@@ -1003,6 +1092,12 @@ pub fn lazy_per_thread_init() -> Result<(), Trap> {
         panic!("failed to set thread stack guarantee");
     }
 
+    Ok(())
+}
+
+#[cfg(target_os = "theseus")]
+pub fn lazy_per_thread_init() -> Result<(), Trap> {
+    // Unused on theseus.
     Ok(())
 }
 

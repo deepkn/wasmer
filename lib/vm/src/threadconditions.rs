@@ -1,16 +1,26 @@
-use dashmap::DashMap;
 use fnv::FnvBuildHasher;
 use wasmer_types::lib::std::sync::Arc;
-use wasmer_types::lib::std::thread::{current, park, park_timeout, Thread};
 use wasmer_types::lib::std::time::Duration;
 use wasmer_types::lib::std::vec::Vec;
 use wasmer_types::lib::std::fmt::{Display, Formatter, Result};
 
+#[cfg(not(target_os = "theseus"))]
+use wasmer_types::lib::std::thread::{current, park, park_timeout, Thread};
+
+#[cfg(target_os = "theseus")]
+use theseus_task::{schedule, get_my_current_task, scheduler::add_task, TaskRef};
+
 #[cfg(feature = "std")]
 use thiserror::Error;
 
+#[cfg(feature = "std")]
+use dashmap::DashMap;
+
 #[cfg(not(feature = "std"))]
 use thiserror_core2::Error;
+
+#[cfg(not(feature = "std"))]
+use leapfrog::LeapMap;
 
 /// Error that can occur during wait/notify calls.
 #[derive(Debug, Error)]
@@ -36,102 +46,211 @@ pub struct NotifyLocation {
     pub address: u32,
 }
 
-#[derive(Debug)]
-struct NotifyWaiter {
-    pub thread: Thread,
-    pub notified: bool,
+cfg_if::cfg_if! {
+    if #[cfg(not(target_os = "theseus"))] {
+        #[derive(Debug)]
+        struct NotifyWaiter {
+            pub thread: Thread,
+            pub notified: bool,
+        }
+    } else if #[cfg(target_os = "theseus")] {
+        #[derive(Debug)]
+        struct NotifyWaiter {
+            pub task: TaskRef,
+            pub notified: bool,
+        }
+    }
 }
+
 #[derive(Debug, Default)]
 struct NotifyMap {
+    #[cfg(feature = "std")]
     pub map: DashMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
+
+    #[cfg(not(feature = "std"))]
+    pub map: LeapMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
 }
 
-/// HashMap of Waiters for the Thread/Notify opcodes
-#[derive(Debug)]
-pub struct ThreadConditions {
-    inner: Arc<NotifyMap>, // The Hasmap with the Notify for the Notify/wait opcodes
-}
-
-impl ThreadConditions {
-    /// Create a new ThreadConditions
-    pub fn new() -> Self {
-        Self {
-            inner: Arc::new(NotifyMap::default()),
+cfg_if::cfg_if! {
+    if #[cfg(not(target_os = "theseus"))] {
+        /// HashMap of Waiters for the Thread/Notify opcodes
+        #[derive(Debug)]
+        pub struct ThreadConditions {
+            inner: Arc<NotifyMap>, // The Hasmap with the Notify for the Notify/wait opcodes
         }
-    }
 
-    // To implement Wait / Notify, a HasMap, behind a mutex, will be used
-    // to track the address of waiter. The key of the hashmap is based on the memory
-    // and waiter threads are "park"'d (with or without timeout)
-    // Notify will wake the waiters by simply "unpark" the thread
-    // as the Thread info is stored on the HashMap
-    // once unparked, the waiter thread will remove it's mark on the HashMap
-    // timeout / awake is tracked with a boolean in the HashMap
-    // because `park_timeout` doesn't gives any information on why it returns
-
-    /// Add current thread to the waiter hash
-    pub fn do_wait(
-        &mut self,
-        dst: NotifyLocation,
-        timeout: Option<Duration>,
-    ) -> Result<u32, WaiterError> {
-        // fetch the notifier
-        if self.inner.map.len() >= 1 << 32 {
-            return Err(WaiterError::TooManyWaiters);
-        }
-        self.inner
-            .map
-            .entry(dst)
-            .or_insert_with(Vec::new)
-            .push(NotifyWaiter {
-                thread: current(),
-                notified: false,
-            });
-        if let Some(timeout) = timeout {
-            park_timeout(timeout);
-        } else {
-            park();
-        }
-        let mut bindding = self.inner.map.get_mut(&dst).unwrap();
-        let v = bindding.value_mut();
-        let id = current().id();
-        let mut ret = 0;
-        v.retain(|cond| {
-            if cond.thread.id() == id {
-                ret = if cond.notified { 0 } else { 2 };
-                false
-            } else {
-                true
+        impl ThreadConditions {
+            /// Create a new ThreadConditions
+            pub fn new() -> Self {
+                Self {
+                    inner: Arc::new(NotifyMap::default()),
+                }
             }
-        });
-        let empty = v.is_empty();
-        drop(bindding);
-        if empty {
-            self.inner.map.remove(&dst);
-        }
-        Ok(ret)
-    }
 
-    /// Notify waiters from the wait list
-    pub fn do_notify(&mut self, dst: NotifyLocation, count: u32) -> u32 {
-        let mut count_token = 0u32;
-        if let Some(mut v) = self.inner.map.get_mut(&dst) {
-            for waiter in v.value_mut() {
-                if count_token < count && !waiter.notified {
-                    waiter.notified = true; // mark as was waiked up
-                    waiter.thread.unpark(); // wakeup!
-                    count_token += 1;
+            // To implement Wait / Notify, a HasMap, behind a mutex, will be used
+            // to track the address of waiter. The key of the hashmap is based on the memory
+            // and waiter threads are "park"'d (with or without timeout)
+            // Notify will wake the waiters by simply "unpark" the thread
+            // as the Thread info is stored on the HashMap
+            // once unparked, the waiter thread will remove it's mark on the HashMap
+            // timeout / awake is tracked with a boolean in the HashMap
+            // because `park_timeout` doesn't gives any information on why it returns
+
+            /// Add current thread to the waiter hash
+            pub fn do_wait(
+                &mut self,
+                dst: NotifyLocation,
+                timeout: Option<Duration>,
+            ) -> Result<u32, WaiterError> {
+                // fetch the notifier
+                if self.inner.map.len() >= 1 << 32 {
+                    return Err(WaiterError::TooManyWaiters);
+                }
+                self.inner
+                    .map
+                    .entry(dst)
+                    .or_insert_with(Vec::new)
+                    .push(NotifyWaiter {
+                        thread: current(),
+                        notified: false,
+                    });
+                if let Some(timeout) = timeout {
+                    park_timeout(timeout);
+                } else {
+                    park();
+                }
+                let mut bindding = self.inner.map.get_mut(&dst).unwrap();
+                let v = bindding.value_mut();
+                let id = current().id();
+                let mut ret = 0;
+                v.retain(|cond| {
+                    if cond.thread.id() == id {
+                        ret = if cond.notified { 0 } else { 2 };
+                        false
+                    } else {
+                        true
+                    }
+                });
+                let empty = v.is_empty();
+                drop(bindding);
+                if empty {
+                    self.inner.map.remove(&dst);
+                }
+                Ok(ret)
+            }
+
+            /// Notify waiters from the wait list
+            pub fn do_notify(&mut self, dst: NotifyLocation, count: u32) -> u32 {
+                let mut count_token = 0u32;
+                if let Some(mut v) = self.inner.map.get_mut(&dst) {
+                    for waiter in v.value_mut() {
+                        if count_token < count && !waiter.notified {
+                            waiter.notified = true; // mark as was waiked up
+                            waiter.thread.unpark(); // wakeup!
+                            count_token += 1;
+                        }
+                    }
+                }
+                count_token
+            }
+        }
+
+        impl Clone for ThreadConditions {
+            fn clone(&self) -> Self {
+                Self {
+                    inner: self.inner.clone(),
                 }
             }
         }
-        count_token
-    }
-}
+    } else if #[cfg(target_os = "theseus")] {
+        /// HashMap of Waiters for the Thread/Notify opcodes
+        #[derive(Debug)]
+        pub struct ThreadConditions {
+            inner: Arc<NotifyMap>, // The Hasmap with the Notify for the Notify/wait opcodes
+        }
 
-impl Clone for ThreadConditions {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
+        impl ThreadConditions {
+            /// Create a new ThreadConditions
+            pub fn new() -> Self {
+                Self {
+                    inner: Arc::new(NotifyMap::default()),
+                }
+            }
+
+            // To implement Wait / Notify, a HasMap, behind a mutex, will be used
+            // to track the address of waiter. The key of the hashmap is based on the memory
+            // and waiter threads are "park"'d (with or without timeout)
+            // Notify will wake the waiters by simply "unpark" the thread
+            // as the Thread info is stored on the HashMap
+            // once unparked, the waiter thread will remove it's mark on the HashMap
+            // timeout / awake is tracked with a boolean in the HashMap
+            // because `park_timeout` doesn't gives any information on why it returns
+
+            /// Add current thread to the waiter hash
+            pub fn do_wait(
+                &mut self,
+                dst: NotifyLocation,
+                timeout: Option<Duration>,
+            ) -> ::core::result::Result<u32, WaiterError> {
+                // fetch the notifier
+                if self.inner.map.len() >= 1 << 32 {
+                    return Err(WaiterError::TooManyWaiters);
+                }
+                self.inner
+                    .map
+                    .entry(dst)
+                    .or_insert_with(Vec::new)
+                    .push(NotifyWaiter {
+                        task: get_my_current_task().ok_or("Failed to get current task"),
+                        notified: false,
+                    });
+                if let Some(timeout) = timeout {
+                    schedule();
+                } else {
+                    schedule();
+                }
+                let mut bindding = self.inner.map.get_mut(&dst).unwrap();
+                let v = bindding.value_mut();
+                let task = get_my_current_task().ok_or("Failed to get current task");
+                let mut ret = 0;
+                v.retain(|cond| {
+                    if cond.task == task {
+                        ret = if cond.notified { 0 } else { 2 };
+                        false
+                    } else {
+                        true
+                    }
+                });
+                let empty = v.is_empty();
+                drop(bindding);
+                if empty {
+                    self.inner.map.remove(&dst);
+                }
+                Ok(ret)
+            }
+
+            /// Notify waiters from the wait list
+            pub fn do_notify(&mut self, dst: NotifyLocation, count: u32) -> u32 {
+                let mut count_token = 0u32;
+                if let Some(mut v) = self.inner.map.get_mut(&dst) {
+                    for waiter in v.value_mut() {
+                        if count_token < count && !waiter.notified {
+                            waiter.notified = true; // mark as was waiked up
+                            add_task(waiter.task); // wakeup!
+                            count_token += 1;
+                        }
+                    }
+                }
+                count_token
+            }
+        }
+
+        impl Clone for ThreadConditions {
+            fn clone(&self) -> Self {
+                Self {
+                    inner: self.inner.clone(),
+                }
+            }
         }
     }
 }

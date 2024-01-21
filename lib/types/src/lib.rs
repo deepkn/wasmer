@@ -62,7 +62,8 @@ pub mod lib {
         pub mod sync {
             pub use alloc::sync::*;
             pub use core::sync::*;
-            pub use core::iter::Once;
+            #[cfg(target_os = "theseus")]
+            pub use spin::Once;
             #[cfg(target_os = "theseus")]
             pub use theseus_mutex::std_api::{Mutex, RwLock};
         }

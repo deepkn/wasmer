@@ -120,7 +120,23 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 [patch.crates-io]
 ### use our own version of volatile which supports zerocopy
 volatile = { git = "https://github.com/theseus-os/volatile" }
+### use our own no_std-compatilbe getopts
+getopts = { git = "https://github.com/theseus-os/getopts" }
+
+### Patch `libc` so we can use libc-specific types when using `cfg(target_os = "theseus")`.
+libc = { git = "https://github.com/deepkn/libc", branch = "theseus-libc" }
+### Patch `core2` with newer functions from `std::io`, e.g., additional `Seek` trait functions
+core2 = { path = "../../libs/core2" }
+### Patch `bincode` because the version on crates.io doesn't handle no_std features correctly.
+bincode = { git = "https://github.com/bincode-org/bincode" }
+
+##############################################################################################
+#################### Below are patches for wasmtime-related crates. ##########################
+##############################################################################################
+wasmparser = { git = "https://github.com/theseus-os/wasm-tools", branch = "no-std-wasmparser" }
+backtrace = { path = "../../ports/backtrace" }
 region = { path = "../../ports/region" }
+noline = { git = "https://github.com/theseus-os/noline", branch = "history-dedup" }
 target-lexicon = { git = "https://github.com/theseus-os/target-lexicon", branch = "theseus" }
 
 [features]
