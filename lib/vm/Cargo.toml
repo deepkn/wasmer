@@ -65,8 +65,8 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std"]
-std = ["lazy_static", "thiserror", "wasmer-types/std", "scopeguard/use_std", "crossbeam-queue/std", "serde/std", "indexmap/std", "fnv/std", "tracing/std", "dashmap", "backtrace/std"]
-core = ["wasmer-types/core", "derivative/use_core", "thiserror_core2", "core2", "hashbrown", "leapfrog", "crossbeam-queue/alloc"]
+std = ["lazy_static", "thiserror", "wasmer-types/std", "scopeguard/use_std", "crossbeam-queue/std", "serde/std", "indexmap/std", "fnv/std", "tracing/std", "dashmap", "backtrace/std", "corosensei/default"]
+core = ["wasmer-types/core", "derivative/use_core", "thiserror_core2", "core2", "hashbrown", "leapfrog", "crossbeam-queue/alloc", "corosensei/default-stack-theseus"]
 enable-serde = ["serde", "indexmap/serde-1", "wasmer-types/enable-serde" ]
 
 [package.metadata.docs.rs]

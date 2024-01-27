@@ -51,19 +51,34 @@ use wasmer_types::{
 /// Implementation of f32.ceil
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f32_ceil(x: f32) -> f32 {
-    x.ceil()
+    #[cfg(feature = "std")] {
+        x.ceil()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::ceilf32(x) }
+    }
 }
 
 /// Implementation of f32.floor
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f32_floor(x: f32) -> f32 {
-    x.floor()
+    #[cfg(feature = "std")] {
+        x.floor()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::floorf32(x) }
+    }
 }
 
 /// Implementation of f32.trunc
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f32_trunc(x: f32) -> f32 {
-    x.trunc()
+    #[cfg(feature = "std")] {
+        x.floor()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::truncf32(x) }
+    }
 }
 
 /// Implementation of f32.nearest
@@ -76,19 +91,39 @@ pub extern "C" fn wasmer_vm_f32_nearest(x: f32) -> f32 {
         x
     } else {
         // Nearest is either ceil or floor depending on which is nearest or even.
-        let u = x.ceil();
-        let d = x.floor();
-        let um = (x - u).abs();
-        let dm = (x - d).abs();
-        if um < dm
+        #[cfg(feature = "std")] {
+            let u = x.ceil();
+            let d = x.floor();
+            let um = (x - u).abs();
+            let dm = (x - d).abs();
+            if um < dm
             || (um == dm && {
                 let h = u / 2.;
                 h.floor() == h
             })
-        {
-            u
-        } else {
-            d
+            {
+                u
+            } else {
+                d
+            }
+        }
+        #[cfg(not(feature = "std"))] {
+            unsafe {
+                let u = core::intrinsics::ceilf32(x);
+                let d = core::intrinsics::floorf32(x); 
+                let um = core::intrinsics::fabsf32(x - u);
+                let dm = core::intrinsics::fabsf32(x - d); 
+                if um < dm
+                || (um == dm && {
+                    let h = u / 2.;
+                    core::intrinsics::floorf32(h) == h
+                })
+                {
+                    u
+                } else {
+                    d
+                } 
+            }
         }
     }
 }
@@ -96,19 +131,34 @@ pub extern "C" fn wasmer_vm_f32_nearest(x: f32) -> f32 {
 /// Implementation of f64.ceil
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f64_ceil(x: f64) -> f64 {
-    x.ceil()
+    #[cfg(feature = "std")] {
+        x.ceil()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::ceilf64(x) }
+    }
 }
 
 /// Implementation of f64.floor
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f64_floor(x: f64) -> f64 {
-    x.floor()
+    #[cfg(feature = "std")] {
+        x.floor()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::floorf64(x) }
+    }
 }
 
 /// Implementation of f64.trunc
 #[no_mangle]
 pub extern "C" fn wasmer_vm_f64_trunc(x: f64) -> f64 {
-    x.trunc()
+    #[cfg(feature = "std")] {
+        x.trunc()
+    }
+    #[cfg(not(feature = "std"))] {
+        unsafe { core::intrinsics::truncf64(x) }
+    }
 }
 
 /// Implementation of f64.nearest
@@ -121,19 +171,39 @@ pub extern "C" fn wasmer_vm_f64_nearest(x: f64) -> f64 {
         x
     } else {
         // Nearest is either ceil or floor depending on which is nearest or even.
-        let u = x.ceil();
-        let d = x.floor();
-        let um = (x - u).abs();
-        let dm = (x - d).abs();
-        if um < dm
+        #[cfg(feature = "std")] {
+            let u = x.ceil();
+            let d = x.floor();
+            let um = (x - u).abs();
+            let dm = (x - d).abs();
+            if um < dm
             || (um == dm && {
                 let h = u / 2.;
                 h.floor() == h
             })
-        {
-            u
-        } else {
-            d
+            {
+                u
+            } else {
+                d
+            }
+        }
+        #[cfg(not(feature = "std"))] {
+            unsafe { 
+                let u = core::intrinsics::ceilf64(x);
+                let d = core::intrinsics::floorf64(x); 
+                let um = core::intrinsics::fabsf64(x - u);
+                let dm = core::intrinsics::fabsf64(x - d);
+                if um < dm
+                || (um == dm && {
+                    let h = u / 2.;
+                    core::intrinsics::floorf64(h) == h
+                })
+                {
+                    u
+                } else {
+                    d
+                } 
+            }
         }
     }
 }

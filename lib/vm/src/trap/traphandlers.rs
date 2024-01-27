@@ -29,6 +29,8 @@ use wasmer_types::lib::std::boxed::Box;
 use thread_local_macro::thread_local;
 #[cfg(target_os = "theseus")]
 use theseus_task::{KillReason, PanicInfoOwned};
+#[cfg(target_os = "theseus")]
+use theseus_memory::VirtualAddress;
 
 /// Configuration for the the runtime VM
 /// Currently only the stack size is configurable
@@ -93,6 +95,7 @@ cfg_if::cfg_if! {
         pub type TrapHandlerFn<'a> = dyn Fn(winapi::um::winnt::PEXCEPTION_POINTERS) -> bool + Send + Sync + 'a;
     } else if #[cfg(target_os = "theseus")] {
         use theseus_signal_handler::SignalContext;
+        /// Function which may handle custom signals while processing traps.
         pub type TrapHandlerFn<'a> = dyn Fn(&SignalContext) -> bool + Send + Sync + 'a;
     }
 }
@@ -611,55 +614,58 @@ cfg_if::cfg_if! {
         /// The default signal handler for wasmer on Theseus.
         /// 
         /// Note: much of this was borrowed from `traphandlers/unix.rs`
-        unsafe fn trap_handler(signal_context: &SignalContext) -> Result<(), ()> {
+        fn trap_handler(signal_context: &SignalContext) -> Result<(), ()> {
             let (pc, sp) = get_pc_sp(signal_context);
             let maybe_fault_address = match signal_context.signal {
-                InvalidAddress => pc,
+                Signal::InvalidAddress => Some(pc),
                 _ => None,
             };
             let trap_code = match signal_context.signal {
-                IllegalInstruction => process_illegal_op(pc),
+                Signal::IllegalInstruction => unsafe { process_illegal_op(pc) },
                 _ => None,
             };
 
             // This is basically the same as the unix version above, only with a
             // few parameters tweaked here and there.
-            let handled = TrapHandlerContext::handle_trap(
-                pc,
-                sp,
-                maybe_fault_address,
-                trap_code,
-                |regs| update_context(signal_context, regs),
-                |handler| handler(signal_context),
-            );
-
-            if handled {
-                // indicates we handled this trap, and the task can continue executing.
-                Ok(())
-            } else {
-                // we didn't handle this trap, so we'll allow the Theseus system 
-                // to continue on to its default action of likely killing the task.
-                Err(())
+            let mut ucontext = *(signal_context);
+            unsafe { 
+                let handled = TrapHandlerContext::handle_trap(
+                                pc,
+                                sp,
+                                maybe_fault_address,
+                                trap_code,
+                                |regs| update_context(&mut ucontext, regs),
+                                |handler| handler(signal_context),
+                            );
+                
+                if handled {
+                    // indicates we handled this trap, and the task can continue executing.
+                    Ok(())
+                } else {
+                    // we didn't handle this trap, so we'll allow the Theseus system 
+                    // to continue on to its default action of likely killing the task.
+                    Err(())
+                }
             }
         }
 
-        unsafe fn get_pc_sp(signal_context: &SignalContext) -> (usize, usize) {
+        fn get_pc_sp(signal_context: &SignalContext) -> (usize, usize) {
             let (pc, sp);
-            pc = signal_context.instruction_pointer.value() as *const u8;
-            sp = signal_context.stack_pointer.value() as *const u8;
+            pc = signal_context.instruction_pointer.value();
+            sp = signal_context.stack_pointer.value();
             (pc, sp)
         }
 
-        unsafe fn update_context(signal_context: &mut SignalContext, regs: TrapHandlerRegs) {
+        fn update_context(signal_context: &mut SignalContext, regs: TrapHandlerRegs) {
             cfg_if::cfg_if! {
                 if #[cfg(target_arch = "x86_64")] {
                     let TrapHandlerRegs { rip, rsp, rbp, rdi, rsi } = regs;
-                    signal_context.instruction_pointer = rip;
-                    signal_context.stack_pointer = rsp;
+                    signal_context.instruction_pointer = VirtualAddress::new(rip as usize).expect("Invalid VirtualAddress");
+                    signal_context.stack_pointer = VirtualAddress::new(rsp as usize).expect("Invalid VirtualAddress");
                 } else if #[cfg(target_arch = "x86")] {
                     let TrapHandlerRegs { eip, esp, ebp, ecx, edx } = regs;
-                    signal_context.instruction_pointer = eip;
-                    signale_context.stack_pointer = esp;
+                    signal_context.instruction_pointer = VirtualAddress::new(eip as usize).expect("Invalid VirtualAddress");
+                    signale_context.stack_pointer = VirtualAddress::new(esp as usize).expect("Invalid VirtualAddress");
                 } else {
                     compile_error!("Unsupported platform");
                 }

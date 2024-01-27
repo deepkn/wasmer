@@ -138,6 +138,7 @@ backtrace = { path = "../../ports/backtrace" }
 region = { path = "../../ports/region" }
 noline = { git = "https://github.com/theseus-os/noline", branch = "history-dedup" }
 target-lexicon = { git = "https://github.com/theseus-os/target-lexicon", branch = "theseus" }
+corosensei = { path = "../../ports/corosensei" }
 
 [features]
 # Don't add the compiler features in default, please add them on the Makefile

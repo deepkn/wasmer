@@ -17,7 +17,7 @@ use wasmer_types::lib::std::fmt;
 use wasmer_types::lib::std::ptr::NonNull;
 use wasmer_types::TableStyle;
 use wasmer_types::{TableType, TrapCode, Type as ValType};
-use wasmer_types::lib::std::string::String;
+use wasmer_types::lib::std::string::{String, ToString};
 use wasmer_types::lib::std::boxed::Box;
 use wasmer_types::lib::std::vec::Vec;
 use wasmer_types::lib::std::vec;

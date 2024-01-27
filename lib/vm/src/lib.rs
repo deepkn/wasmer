@@ -22,6 +22,7 @@
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![feature(error_in_core)]
+#![feature(core_intrinsics)]
 
 #[cfg(all(feature = "std", feature = "core"))]
 compile_error!(

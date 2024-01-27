@@ -3,12 +3,16 @@ use wasmer_types::lib::std::sync::Arc;
 use wasmer_types::lib::std::time::Duration;
 use wasmer_types::lib::std::vec::Vec;
 use wasmer_types::lib::std::fmt::{Display, Formatter, Result};
+use wasmer_types::lib::std::collections::HashMap;
 
 #[cfg(not(target_os = "theseus"))]
 use wasmer_types::lib::std::thread::{current, park, park_timeout, Thread};
 
 #[cfg(target_os = "theseus")]
-use theseus_task::{schedule, get_my_current_task, scheduler::add_task, TaskRef};
+use theseus_task::{schedule, get_my_current_task, scheduler::add_task, scheduler::remove_task, TaskRef, WeakTaskRef};
+
+#[cfg(target_os = "theseus")]
+use theseus_mutex::Mutex;
 
 #[cfg(feature = "std")]
 use thiserror::Error;
@@ -31,6 +35,8 @@ pub enum WaiterError {
     Unimplemented,
     /// To many waiter for an address
     TooManyWaiters,
+    /// Unexpected error
+    Unexpected,
 }
 
 impl Display for WaiterError {
@@ -53,22 +59,23 @@ cfg_if::cfg_if! {
             pub thread: Thread,
             pub notified: bool,
         }
+
+        #[derive(Debug, Default)]
+        struct NotifyMap {
+            pub map: DashMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
+        }
     } else if #[cfg(target_os = "theseus")] {
         #[derive(Debug)]
         struct NotifyWaiter {
-            pub task: TaskRef,
+            pub task: WeakTaskRef,
             pub notified: bool,
         }
+
+        #[derive(Debug, Default)]
+        struct NotifyMap {
+            pub map: HashMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
+        }
     }
-}
-
-#[derive(Debug, Default)]
-struct NotifyMap {
-    #[cfg(feature = "std")]
-    pub map: DashMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
-
-    #[cfg(not(feature = "std"))]
-    pub map: LeapMap<NotifyLocation, Vec<NotifyWaiter>, FnvBuildHasher>,
 }
 
 cfg_if::cfg_if! {
@@ -166,14 +173,14 @@ cfg_if::cfg_if! {
         /// HashMap of Waiters for the Thread/Notify opcodes
         #[derive(Debug)]
         pub struct ThreadConditions {
-            inner: Arc<NotifyMap>, // The Hasmap with the Notify for the Notify/wait opcodes
+            inner: Arc<Mutex<NotifyMap>>, // The Hasmap with the Notify for the Notify/wait opcodes
         }
 
         impl ThreadConditions {
             /// Create a new ThreadConditions
             pub fn new() -> Self {
                 Self {
-                    inner: Arc::new(NotifyMap::default()),
+                    inner: Arc::new(Mutex::new(NotifyMap::default())),
                 }
             }
 
@@ -193,28 +200,28 @@ cfg_if::cfg_if! {
                 timeout: Option<Duration>,
             ) -> ::core::result::Result<u32, WaiterError> {
                 // fetch the notifier
-                if self.inner.map.len() >= 1 << 32 {
+                let mut conds = self.inner.lock();
+                if conds.map.len() >= 1 << 32 {
                     return Err(WaiterError::TooManyWaiters);
                 }
-                self.inner
-                    .map
+
+                let taskref = get_my_current_task().ok_or(WaiterError::Unexpected)?;
+                conds.map
                     .entry(dst)
                     .or_insert_with(Vec::new)
                     .push(NotifyWaiter {
-                        task: get_my_current_task().ok_or("Failed to get current task"),
+                        task: taskref.downgrade(),
                         notified: false,
                     });
                 if let Some(timeout) = timeout {
-                    schedule();
+                    remove_task(&taskref);
                 } else {
-                    schedule();
+                    remove_task(&taskref);
                 }
-                let mut bindding = self.inner.map.get_mut(&dst).unwrap();
-                let v = bindding.value_mut();
-                let task = get_my_current_task().ok_or("Failed to get current task");
+                let mut v = conds.map.get_mut(&dst).unwrap();
                 let mut ret = 0;
                 v.retain(|cond| {
-                    if cond.task == task {
+                    if cond.task.upgrade().unwrap() == taskref {
                         ret = if cond.notified { 0 } else { 2 };
                         false
                     } else {
@@ -222,9 +229,8 @@ cfg_if::cfg_if! {
                     }
                 });
                 let empty = v.is_empty();
-                drop(bindding);
                 if empty {
-                    self.inner.map.remove(&dst);
+                    conds.map.remove(&dst);
                 }
                 Ok(ret)
             }
@@ -232,11 +238,11 @@ cfg_if::cfg_if! {
             /// Notify waiters from the wait list
             pub fn do_notify(&mut self, dst: NotifyLocation, count: u32) -> u32 {
                 let mut count_token = 0u32;
-                if let Some(mut v) = self.inner.map.get_mut(&dst) {
-                    for waiter in v.value_mut() {
+                if let Some(mut v) = self.inner.lock().map.get_mut(&dst) {
+                    for waiter in v {
                         if count_token < count && !waiter.notified {
-                            waiter.notified = true; // mark as was waiked up
-                            add_task(waiter.task); // wakeup!
+                            waiter.notified = true; // mark as was waked up
+                            add_task(waiter.task.upgrade().unwrap()); // wakeup!
                             count_token += 1;
                         }
                     }

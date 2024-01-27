@@ -9,8 +9,11 @@ use more_asserts::assert_lt;
 use wasmer_types::lib::std::io;
 use wasmer_types::lib::std::ptr;
 use wasmer_types::lib::std::vec::Vec;
-use wasmer_types::lib::std::string::String;
+use wasmer_types::lib::std::string::{String, ToString};
 use wasmer_types::lib::std::slice;
+
+#[cfg(target_os = "theseus")]
+use theseus_std::{fs::File, path::Path};
 
 /// Round `size` up to the nearest multiple of `page_size`.
 fn round_up_to_page_size(size: usize, page_size: usize) -> usize {
@@ -28,6 +31,8 @@ pub struct Mmap {
     ptr: usize,
     total_size: usize,
     accessible_size: usize,
+    #[cfg(target_os = "theseus")]
+    theseus_mp: spin::Mutex<theseus_memory::MappedPages>,
 }
 
 impl Mmap {
@@ -41,6 +46,8 @@ impl Mmap {
             ptr: empty.as_ptr() as usize,
             total_size: 0,
             accessible_size: 0,
+            #[cfg(target_os = "theseus")]
+            theseus_mp: spin::Mutex::new(theseus_memory::MappedPages::empty()),
         }
     }
 
@@ -54,7 +61,32 @@ impl Mmap {
     /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
     /// within a reserved mapping of `mapping_size` bytes. `accessible_size` and `mapping_size`
     /// must be native page-size multiples.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "theseus")]
+    pub fn accessible_reserved(accessible_size: usize, mapping_size: usize) -> Result<Self, String> {
+        let page_size = region::page::size();
+        assert_le!(accessible_size, mapping_size);
+        assert_eq!(mapping_size & (page_size - 1), 0);
+        assert_eq!(accessible_size & (page_size - 1), 0);
+
+        if mapping_size == 0 {
+            return Ok(Self::new());
+        }
+
+        // Theseus doesn't do demand paging nor split mappings into multiple regions with different permissions,
+        // so we just reserve the entire `mapping_size` now as read-write.
+        let mp = theseus_memory::create_mapping(mapping_size, theseus_memory::PteFlags::new().writable(true))?;
+        Ok(Self {
+            ptr: mp.start_address().value(),
+            total_size: mapping_size,
+            accessible_size: mapping_size,
+            theseus_mp: spin::Mutex::new(mp),
+        })
+    }
+
+    /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
+    /// within a reserved mapping of `mapping_size` bytes. `accessible_size` and `mapping_size`
+    /// must be native page-size multiples.
+    #[cfg(not(any(target_os = "theseus", target_os = "windows")))]
     pub fn accessible_reserved(
         accessible_size: usize,
         mapping_size: usize,
@@ -189,7 +221,7 @@ impl Mmap {
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "theseus", target_os = "windows")))]
     pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
         let page_size = region::page::size();
         assert_eq!(start & (page_size - 1), 0);
@@ -201,6 +233,20 @@ impl Mmap {
         let ptr = self.ptr as *const u8;
         unsafe { region::protect(ptr.add(start), len, region::Protection::READ_WRITE) }
             .map_err(|e| e.to_string())
+    }
+
+    /// Make the memory starting at `start` and extending for `len` bytes accessible.
+    /// `start` and `len` must be native page-size multiples and describe a range within
+    /// `self`'s reserved memory.
+    #[cfg(target_os = "theseus")]
+    pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
+        let page_size = region::page::size();
+        assert_eq!(start & (page_size - 1), 0);
+        assert_eq!(len & (page_size - 1), 0);
+        assert_lt!(len, self.total_size);
+        assert_lt!(start, self.total_size - len);
+
+        return Err("Theseus doesn't yet support `Mmap::make_accessible()`".to_string());
     }
 
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
@@ -310,7 +356,13 @@ impl Mmap {
 }
 
 impl Drop for Mmap {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "theseus")]
+    fn drop(&mut self) {
+        // do nothing, each field will be dropped and the `MappedPages` auto-unmapped
+        //  log::warn!("Mmap::Drop: Theseus doesn't yet properly unmap its MappedPages and the backing File");
+    }
+
+    #[cfg(not(any(target_os = "theseus", target_os = "windows")))]
     fn drop(&mut self) {
         if self.total_size != 0 {
             let r = unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.total_size) };
