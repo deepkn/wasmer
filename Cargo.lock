@@ -7592,8 +7592,10 @@ dependencies = [
 name = "wasmer-object"
 version = "4.2.5"
 dependencies = [
+ "core2",
  "object 0.28.4",
  "thiserror",
+ "thiserror_core2",
  "wasmer-types",
 ]
 

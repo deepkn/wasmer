@@ -1,5 +1,10 @@
-use object::write::Error as ObjectWriteError;
+use wasmer_types::lib::std::string::String;
+
+#[cfg(feature = "std")]
 use thiserror::Error;
+
+#[cfg(feature = "core")]
+use thiserror_core2::Error;
 
 /// The Object error can occur when creating an object file
 /// from a `Compilation`.
@@ -15,8 +20,8 @@ pub enum ObjectError {
     #[error("Unknown Endianness")]
     UnknownEndianness,
     /// The object was provided a not-supported architecture
-    #[error("Error when writing the object: {0}")]
-    Write(#[from] ObjectWriteError),
+    #[error("Error when writing the object {0}")]
+    Write(String),
     /// The module provided could not be serialized into bytes
     #[error("Error when serializing the given module: {0}")]
     Serialize(#[from] wasmer_types::SerializeError),

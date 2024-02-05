@@ -13,6 +13,10 @@ use wasmer_types::{
     RelocationKind as Reloc, RelocationTarget, SectionIndex, Triple,
 };
 use wasmer_types::{Symbol, SymbolRegistry};
+use wasmer_types::lib::std::iter::{Iterator, IntoIterator};
+use wasmer_types::lib::std::{format, panic};
+use wasmer_types::lib::std::vec::Vec;
+
 
 const DWARF_SECTION_NAME: &[u8] = b".eh_frame";
 
@@ -344,7 +348,7 @@ pub fn emit_compilation(
                             addend: r.addend,
                         },
                     )
-                    .map_err(ObjectError::Write)?;
+                    .map_err(|err| ObjectError::Write(format!("{}", err)))?;
                 }
                 RelocationTarget::LibCall(libcall) => {
                     let libcall_fn_name = libcall.to_function_name().as_bytes();
@@ -372,7 +376,7 @@ pub fn emit_compilation(
                             addend: r.addend,
                         },
                     )
-                    .map_err(ObjectError::Write)?;
+                    .map_err(|err| ObjectError::Write(format!("{}", err)))?;
                 }
                 RelocationTarget::CustomSection(section_index) => {
                     let (_, target_symbol) = custom_section_ids.get(section_index).unwrap();
@@ -387,7 +391,7 @@ pub fn emit_compilation(
                             addend: r.addend,
                         },
                     )
-                    .map_err(ObjectError::Write)?;
+                    .map_err(|err| ObjectError::Write(format!("{}", err)))?;
                 }
             };
         }
